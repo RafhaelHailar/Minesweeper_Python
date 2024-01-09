@@ -1,6 +1,6 @@
 import keyboard
 import os
-
+from board_blueprint import board_blueprint
 
 BOARD = []
 column = 30
@@ -17,46 +17,81 @@ f_choosed = 1 # default to 'no'
 is_choosing = False
 is_finalizing = False
 
+try: 
+    print(board_blueprint[31])
+except Exception as error: 
+    print("The error is " + str(error))
 
 # 0 digged, 1 not digged, 2 flag
 
 def create_board():
-  for y in range(0,column):
-      row_items = []
-      for x in range(0,row):
-         row_items.append({
-            "item": ".",
-            "type": 1
-         })
-      BOARD.append(row_items)
+    for y in range(0,len(board_blueprint)):
+        row_items = []
+        for x in range(0,len(board_blueprint[y])): 
+            total_bomb_around = 0;
+            has_bomb = board_blueprint[y][x]
+            cell_around = [
+                [-1,0],[1,0],
+                [0,-1],[0,1]
+            ]
+
+            if not(has_bomb): 
+                for i in range(0,len(cell_around)):
+                    cx = x + cell_around[i][0]
+                    cy = y + cell_around[i][1]
+
+                    if (check_bomb(cx,cy)):
+                        total_bomb_around += 1
+                
+            row_items.append({
+               "item": str(total_bomb_around),
+               "type": 1,
+               "cursor": False,
+               "bomb": has_bomb
+            })
+        BOARD.append(row_items);
+
+def check_bomb(x,y):
+    has_bomb = False
+    try: 
+        if board_blueprint[y][x]:
+            has_bomb = True
+    except: 
+        has_bomb = False 
+
+    return has_bomb
+
 
 def draw_board():
     for y in range(0,column):
         row_items = ""
         for x in range(0,row):
-           row_items += BOARD[y][x]["item"]
+           cell_type = BOARD[y][x]["type"]
+           display = BOARD[y][x]["item"]
+           has_cursor = BOARD[y][x]["cursor"]
+           has_bomb = BOARD[y][x]["bomb"]
+               
+           if has_cursor:
+               display = "[" + display + "]"
+           else:
+               if cell_type == 0:
+                   display = "(" + display + ")"
+               else:
+                   display = " " + display + " "
+
+           if has_bomb:
+               display = " * "
+
+           row_items += display 
         print(row_items)
 
 def update_board():
     for y in range(0,column):
         for x in range(0,row):
              cell_type = BOARD[y][x]["type"]
-             display = "."
+             display = BOARD[y][x]["item"]
 
-             cursor_x = CURSOR[0]
-             cursor_y = CURSOR[1]
-
-             if cell_type == 0:
-                 display = "1"
-             elif cell_type == 2:
-                 display = "$"
-
-             if not(cursor_x == x and cursor_y == y):
-                 if cell_type == 0:
-                     display = "(" + display + ")"
-                 else:
-                     display = " " + display + " "
-
+             BOARD[y][x]["cursor"] = False
              BOARD[y][x]["item"] = display
 
 def draw_choice():
@@ -89,8 +124,7 @@ def draw_cursor():
     y = CURSOR[1]
     x = CURSOR[0]
 
-    item = BOARD[y][x]["item"].strip() 
-    BOARD[y][x]["item"] = "[" + item + "]"
+    BOARD[y][x]["cursor"] = True;
     
     clear_screen()
     draw_board()
@@ -251,4 +285,5 @@ def update():
     draw_cursor()
     while True:
         update_cursor()
+
 init()
